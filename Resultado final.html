@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bingo Eletrônico</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #282c34;
+    color: #fff;
+    min-height: 100vh;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: url('https://images.unsplash.com/photo-1535905553796-d87cc92b01f0?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
+    background-size: cover;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 15, 40, 0.75);
+    z-index: -1;
+  }
+
+  .container {
+    background: rgba(255, 255, 255, 0.95);
+    color: #111;
+    border-radius: 16px;
+    box-shadow: 0 0 20px rgba(55, 0, 204, 0.5);
+    max-width: 900px;
+    width: 100%;
+    padding: 30px 40px;
+    text-align: left;
+    display: none;
+  }
+
+  .container.active {
+    display: block;
+  }
+
+  h1, h2 {
+    color: #3b28b7;
+    text-align: center;
+    text-shadow: 0 0 5px #574ce8;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  p, ul {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #222;
+    margin-bottom: 16px;
+  }
+
+  ul {
+    padding-left: 1.2em;
+  }
+
+  button {
+    background: #3b28b7;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 14px 36px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 0 10px #574ce8;
+    transition: background 0.3s ease;
+    margin-top: 20px;
+    display: inline-block;
+  }
+
+  button:hover {
+    background: #6453db;
+  }
+
+  .bingo-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin: 20px auto;
+    max-width: 420px;
+  }
+
+  .cell {
+    width: 65px;
+    height: 65px;
+    background: #6c5ce7;
+    border-radius: 14px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1.4rem;
+    box-shadow: 0 0 10px #523dbf inset;
+    transition: 0.3s ease;
+  }
+
+  .cell.free {
+    background: #ff7675;
+    font-size: 1.1rem;
+    box-shadow: 0 0 15px #ff4d4d inset;
+  }
+
+  .cell.marked {
+    background: #00cec9;
+    color: #e4f9ff;
+    box-shadow: 0 0 15px #00ffe5 inset;
+    transform: scale(1.1);
+  }
+
+  .cell.winning {
+    background: #00b894 !important;
+    animation: pulse 1.3s infinite alternate;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1.1); box-shadow: 0 0 12px #00b894; }
+    100% { transform: scale(1.3); box-shadow: 0 0 25px #00ffa6; }
+  }
+
+  .drawn-numbers {
+    background: #341f97;
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .number-chip {
+    background: #5a42d8;
+    padding: 10px 18px;
+    border-radius: 40px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #b0a8ff;
+    box-shadow: 0 0 8px #7c6afc;
+  }
+
+  .number-chip.drawn {
+    background: #00cec9;
+    color: #e4f9ff;
+    box-shadow: 0 0 14px #00ffe5 inset;
+  }
+
+  .status-message {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 15px;
+    color: #3b28b7;
+    text-align: center;
+  }
+
+  /* Modal para pedir nome */
+  #nameModal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #nameModalContent {
+    background: #fff;
+    color: #111;
+    padding: 30px 40px;
+    border-radius: 16px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 0 20px #574ce8;
+    text-align: center;
+  }
+
+  #nameModalContent input {
+    width: 100%;
+    font-size: 1.2rem;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1.5px solid #574ce8;
+    margin-top: 15px;
+    outline: none;
+  }
+
+  #nameModalContent button {
+    margin-top: 20px;
+    background: #3b28b7;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 14px 36px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 0 10px #574ce8;
+    transition: background 0.3s ease;
+  }
+  #nameModalContent button:hover {
+    background: #6453db;
+  }
+</style>
+</head>
+<body>
+<div class="overlay"></div>
+
+<!-- Tela de Introdução -->
+<div class="container active" id="intro">
+  <h1>Bem-vindo ao Bingo Eletrônico</h1>
+  <h2>Como funciona o jogo</h2>
+  <p>Este jogo de bingo eletrônico para um jogador foi desenvolvido para proporcionar diversão e simplicidade.</p>
+  <h2>Regras básicas</h2>
+  <ul>
+    <li>A cartela é uma grade 5x5 com números aleatórios organizados conforme padrão tradicional, a casa central "Livre" está automaticamente marcada.</li>
+    <li>Os números são sorteados aleatoriamente de 1 a 75, sem repetição.</li>
+    <li>Você pode optar por gerar sua cartela para acompanhar os números marcados visualmente ou sortear números diretamente.</li>
+    <li>O objetivo é completar uma linha, coluna ou diagonal marcada na cartela para ganhar.</li>
+  </ul>
+  <p>A geração de cartela é totalmente opcional. Você pode sortear os números sem gerar uma cartela e ainda jogar normalmente.</p>
+  <button id="start-btn">Começar</button>
+</div>
+
+<!-- Tela do Jogo -->
+<div class="container" id="game">
+  <h1>Bingo Eletrônico</h1>
+
+  <div id="gameSection">
+    <p id="greeting"></p>
+    <div class="bingo-board" id="bingoBoard"></div>
+
+    <div style="text-align: center;">
+      <button id="btnGenerateCard">Gerar Cartela (Opcional)</button>
+      <button id="btnDrawNumber" disabled>Sortear Número</button>
+      <button id="btnRestart">Reiniciar</button>
+    </div>
+
+    <div class="drawn-numbers" id="drawnNumbers"></div>
+    <div class="status-message" id="statusMessage"></div>
+  </div>
+</div>
+
+<!-- Modal para pedir nome -->
+<div id="nameModal" style="display:none;">
+  <div id="nameModalContent">
+    <h2>Digite seu nome para começar</h2>
+    <input type="text" id="playerNameInput" placeholder="Seu nome" />
+    <button id="confirmNameBtn">Jogar</button>
+  </div>
+</div>
+
+<script>
+  const intro = document.getElementById('intro');
+  const game = document.getElementById('game');
+  const nameModal = document.getElementById('nameModal');
+  const playerNameInput = document.getElementById('playerNameInput');
+  const confirmNameBtn = document.getElementById('confirmNameBtn');
+  const greeting = document.getElementById('greeting');
+
+  let playerName = '';
+  let currentCard = [];
+  let drawnNumbers = new Set();
+  let availableNumbers = new Set();
+  let hasBingo = false;
+
+  const bingoBoard = document.getElementById('bingoBoard');
+  const btnGenerateCard = document.getElementById('btnGenerateCard');
+  const btnDrawNumber = document.getElementById('btnDrawNumber');
+  const btnRestart = document.getElementById('btnRestart');
+  const drawnNumbersDiv = document.getElementById('drawnNumbers');
+  const statusMessage = document.getElementById('statusMessage');
+
+  document.getElementById('start-btn').addEventListener('click', () => {
+    intro.classList.remove('active');
+    intro.style.display = 'none';
+    game.classList.add('active');
+    game.style.display = 'block';
+    nameModal.style.display = 'flex';
+    playerNameInput.focus();
+  });
+
+  confirmNameBtn.addEventListener('click', () => {
+    const name = playerNameInput.value.trim();
+    if (!name) {
+      alert('Por favor, digite seu nome.');
+      playerNameInput.focus();
+      return;
+    }
+    playerName = name;
+    nameModal.style.display = 'none';
+    greeting.textContent = `Boa sorte, ${playerName}!`;
+    startGame();
+  });
+
+  playerNameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      confirmNameBtn.click();
+    }
+  });
+
+  function startGame() {
+    initBoard();
+    resetGameState(true);
+  }
+
+  btnGenerateCard.addEventListener('click', () => {
+    currentCard = generateCard();
+    renderCard(currentCard);
+    btnDrawNumber.disabled = false;
+    btnGenerateCard.disabled = true;
+    statusMessage.textContent = "Cartela gerada!";
+  });
+
+  btnDrawNumber.addEventListener('click', () => {
+    if (hasBingo || availableNumbers.size === 0) return;
+    const arr = [...availableNumbers];
+    const n = arr[Math.floor(Math.random() * arr.length)];
+    availableNumbers.delete(n);
+    drawnNumbers.add(n);
+    updateDrawnUI();
+    if (currentCard.length > 0) markNumber(n);
+    checkBingoAndUpdate();
+  });
+
+  btnRestart.addEventListener('click', () => {
+    resetGameState(true);
+    statusMessage.textContent = `Jogo reiniciado! Boa sorte, ${playerName}!`;
+  });
+
+  function initBoard() {
+    bingoBoard.innerHTML = '';
+    ['B','I','N','G','O'].forEach(l => {
+      const header = document.createElement('div');
+      header.className = 'cell';
+      header.style.background = '#111';
+      header.textContent = l;
+      bingoBoard.appendChild(header);
+    });
+    for (let i=0; i<25; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      bingoBoard.appendChild(cell);
+    }
+  }
+
+  function generateCard() {
+    const card = [];
+    for(let col=0; col<5; col++) {
+      const nums = new Set();
+      const start = col*15+1;
+      while(nums.size < 5) {
+        nums.add(Math.floor(Math.random()*15)+start);
+      }
+      card.push(Array.from(nums));
+    }
+    const flat = [];
+    for(let row=0; row<5; row++) {
+      for(let col=0; col<5; col++) {
+        flat.push((row === 2 && col === 2) ? 'FREE' : card[col][row]);
+      }
+    }
+    return flat;
+  }
+
+  function renderCard(card) {
+    const cells = [...bingoBoard.querySelectorAll('.cell')].slice(5);
+    cells.forEach((cell,i) => {
+      cell.className = 'cell';
+      const val = card[i];
+      if(val === 'FREE') {
+        cell.textContent = 'Livre';
+        cell.classList.add('free','marked');
+      } else {
+        cell.textContent = val;
+      }
+    });
+  }
+
+  function resetGameState(enableDraw=false) {
+    currentCard = [];
+    drawnNumbers.clear();
+    availableNumbers = new Set([...Array(75).keys()].map(n => n+1));
+    btnDrawNumber.disabled = !enableDraw;
+    btnGenerateCard.disabled = false;
+    statusMessage.textContent = "Jogo iniciado!";
+    drawnNumbersDiv.innerHTML = '';
+    clearBoardMarks();
+    hasBingo = false;
+  }
+
+  function clearBoardMarks() {
+    const cells = [...bingoBoard.querySelectorAll('.cell')].slice(5);
+    cells.forEach(c => {
+      c.classList.remove('marked','winning');
+      if(c.classList.contains('free')) c.classList.add('marked');
+    });
+  }
+
+  function updateDrawnUI() {
+    drawnNumbersDiv.innerHTML = '';
+    [...drawnNumbers].sort((a,b) => a-b).forEach(n => {
+      const chip = document.createElement('div');
+      chip.className = 'number-chip drawn';
+      chip.textContent = n;
+      drawnNumbersDiv.appendChild(chip);
+    });
+  }
+
+  function markNumber(num) {
+    const cells = [...bingoBoard.querySelectorAll('.cell')].slice(5);
+    cells.forEach((cell,i) => {
+      if(currentCard[i] === num) cell.classList.add('marked');
+    });
+  }
+
+  function checkBingoAndUpdate() {
+    const cells = [...bingoBoard.querySelectorAll('.cell')].slice(5);
+    const marked = cells.map(c => c.classList.contains('marked'));
+    const lines = [];
+
+    for(let r=0; r<5; r++) lines.push([0,1,2,3,4].map(c => r*5 + c));
+    for(let c=0; c<5; c++) lines.push([0,1,2,3,4].map(r => r*5 + c));
+    lines.push([0,6,12,18,24]);
+    lines.push([4,8,12,16,20]);
+
+    for(let line of lines) {
+      if(line.every(i => marked[i])) {
+        line.forEach(i => cells[i].classList.add('winning'));
+        hasBingo = true;
+        statusMessage.textContent = "BINGO!";
+        btnDrawNumber.disabled = true;
+        return;
+      }
+    }
+    statusMessage.textContent = "Continue jogando...";
+  }
+</script>
+</body>
+</html>
